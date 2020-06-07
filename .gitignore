@@ -123,3 +123,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# vscode configfile
+.vscode/
+
+# config file
+config/config.yaml

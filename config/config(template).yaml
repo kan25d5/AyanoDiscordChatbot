@@ -1,0 +1,7 @@
+# 各種APIを利用する際のトークンキー
+api_key:
+  discord: "api-key"
+  OpenWeatherMap: "api-key"
+
+# botのコマンド呼び出す際の接頭辞
+command_prefix: "**"
