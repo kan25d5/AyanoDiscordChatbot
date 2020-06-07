@@ -29,8 +29,9 @@ class Ayano(commands.Bot):
         if message.author.bot:
             print("utterance myself")
             return
-        if self.user.id in message.mentions:
-            print("not mention")
+
+        mentions = [user.id for user in message.mentions]
+        if self.user.id not in mentions:
             return
 
         channel = message.channel
