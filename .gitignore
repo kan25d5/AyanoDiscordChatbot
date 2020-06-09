@@ -129,3 +129,9 @@ dmypy.json
 
 # config file
 config/config.yaml
+
+# temp music file
+temp.mp3
+
+# ffmpeg.exe
+ffmpeg.exe
