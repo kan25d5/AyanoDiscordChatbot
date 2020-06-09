@@ -2,6 +2,9 @@ import json
 import datetime
 from random import shuffle
 
+# コグ
+from WeatherSystem.weather_cog import WeatherCog
+
 # パイプラインアーキテクチャ
 from WeatherSystem.predict_da.predict_da import PredictDA
 from WeatherSystem.date import PREFECTURE, DATE, DATE_WORDS
@@ -19,14 +22,15 @@ CONCEPT_MODEL = "WeatherSystem\\predict_concept\\"
 class WeatherSystem(object):
     """天候情報案内対話システムの基幹クラス"""
 
-    cogs = None
-
     def __init__(self, token):
         self.predic_da = PredictDA()
         self.tell_weather = TellWeather(token)
         self.utts = self.__load_json(UTTS_DATA)
         self.__init_frame()
         self.now_day = datetime.datetime.now().day
+        self.cog = WeatherCog
+        self.user_da = None
+        self.sys_da = None
 
     def __load_json(self, path):
         with open(path, "r", encoding="UTF-8") as f:
@@ -36,14 +40,13 @@ class WeatherSystem(object):
     def __init_frame(self):
         """フレームを初期状態にする"""
         self.frame = {"place": "", "placeId": "", "date": ""}
+        self.now_frame = {"place": "", "placeId": "", "date": ""}
+        self.user_da = None
+        self.sys_da = None
 
-    def __is_init_frame(self):
+    def __is_init_frame(self, frame):
         """フレームが初期状態か"""
-        if (
-            self.frame["place"] == ""
-            and self.frame["placeId"] == ""
-            and self.frame["date"] == ""
-        ):
+        if frame["place"] == "" and frame["placeId"] == "" and frame["date"] == "":
             return True
         else:
             return False
@@ -133,20 +136,26 @@ class WeatherSystem(object):
 
     def __update_frame(self, text):
         """フレームを更新する"""
+
         # 地域名を抽出
         if self.frame["place"] == "":
             place, placeID = self.__extract_place(text)
+            self.now_frame["place"] = place
             self.frame["place"] = place
+            self.now_frame["placeId"] = placeID
             self.frame["placeId"] = placeID
 
         # 日付を抽出
         if self.frame["date"] == "":
             self.frame["date"] = self.__extract_date(text)
+            self.now_frame["date"] = self.frame["date"]
 
     def __update_sys_da(self, user_da):
         """フレームからシステムの対話行為タイプを返す"""
         if user_da == "request-weather":
-            if self.__is_init_frame():
+            if self.__is_init_frame(self.frame):
+                return "none"
+            elif self.__is_init_frame(self.now_frame):
                 return "none"
             if self.frame["date"] == "ValueError":
                 return "ask-redate"
@@ -165,26 +174,29 @@ class WeatherSystem(object):
             return "none"
 
     def reply(self, text):
+        # 現在の発話
+        self.now_frame = {"place": "", "placeId": "", "date": ""}
+
         # ユーザーの対話行為タイプを取得
-        user_da = self.predic_da.predict_da(text)
-        print("user_da", user_da)
+        self.user_da = self.predic_da.predict_da(text)
 
         # フレームの更新
         self.__update_frame(text)
-        print("frame", self.frame)
 
         # システムの対話行為タイプを決定
-        sys_da = self.__update_sys_da(user_da)
-        print("sys_da", sys_da)
+        self.sys_da = self.__update_sys_da(self.user_da)
 
-        if sys_da == "none":
+        if self.sys_da == "none":
             return None
-        elif sys_da == "ask-redate":
+
+        elif self.sys_da == "ask-redate":
             self.frame["date"] = ""
-            return self.__get_utt(sys_da)
-        elif sys_da.startswith("ask-"):
-            return self.__get_utt(sys_da)
-        elif sys_da == "tell-info":
+            return self.__get_utt(self.sys_da)
+
+        elif self.sys_da.startswith("ask-"):
+            return self.__get_utt(self.sys_da)
+
+        elif self.sys_da == "tell-info":
             utt = self.__get_tell_utt()
             self.__init_frame()
             return utt
