@@ -1,3 +1,4 @@
+import json
 import discord
 import youtube_dl as ytl
 from discord.ext import commands
@@ -8,6 +9,7 @@ class MusicCog(commands.Cog):
     def __init__(self, bot, system):
         self.bot = bot
         self.system = system
+        self.voice = None
 
     @commands.command()
     async def play(self, ctx: commands.Context):
@@ -29,17 +31,27 @@ class MusicCog(commands.Cog):
         # 一時音源ファイルのダウンロード
         ydl = ytl.YoutubeDL({"format": "bestaudio/best", "outtmpl": "temp.mp3"})
         info_log = ydl.extract_info(url, download=True)
-        print(info_log)
 
         # VC接続
-        voice = await self.bot.get_channel(vc.channel.id).connect()
+        self.voice = await self.bot.get_channel(vc.channel.id).connect()
 
         # 曲のロード
-        voice.play(discord.FFmpegPCMAudio("temp.mp3", executable="ffmpeg.exe"))
-        voice.source = discord.PCMVolumeTransformer(voice.source)
+        self.voice.play(discord.FFmpegPCMAudio("temp.mp3", executable="ffmpeg.exe"))
+        self.voice.source = discord.PCMVolumeTransformer(self.voice.source)
 
         # 再生
-        voice.is_playing()
+        self.voice.is_playing()
+
+    @commands.command()
+    async def stop(self, ctx: commands.Context):
+        vc = ctx.author.voice
+        if vc is None:
+            print("ユーザーはVCにいない")
+            return
+        if not self.voice.is_playing():
+            print("プレイがない")
+            return
+        self.voice.stop()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
