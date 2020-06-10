@@ -33,7 +33,10 @@ class MusicCog(commands.Cog):
         info_log = ydl.extract_info(url, download=True)
 
         # VC接続
-        self.voice = await self.bot.get_channel(vc.channel.id).connect()
+        try:
+            self.voice = await self.bot.get_channel(vc.channel.id).connect()
+        except discord.errors.ClientException:
+            print("Already connected to a voice channel.")
 
         # 曲のロード
         self.voice.play(discord.FFmpegPCMAudio("temp.mp3", executable="ffmpeg.exe"))
