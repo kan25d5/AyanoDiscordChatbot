@@ -41,8 +41,6 @@ class MusicCog(commands.Cog):
         # 曲のロード
         self.voice.play(discord.FFmpegPCMAudio("temp.mp3", executable="ffmpeg.exe"))
         self.voice.source = discord.PCMVolumeTransformer(self.voice.source)
-
-        # 再生
         self.voice.is_playing()
 
     @commands.command()
