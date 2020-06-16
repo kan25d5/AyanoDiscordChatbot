@@ -30,7 +30,7 @@ class MusicCog(commands.Cog):
 
         # 一時音源ファイルのダウンロード
         ydl = ytl.YoutubeDL({"format": "bestaudio/best", "outtmpl": "temp.mp3"})
-        info_log = ydl.extract_info(url, download=True)
+        ydl.extract_info(url, download=True)
 
         # VC接続
         try:
@@ -42,6 +42,33 @@ class MusicCog(commands.Cog):
         self.voice.play(discord.FFmpegPCMAudio("temp.mp3", executable="ffmpeg.exe"))
         self.voice.source = discord.PCMVolumeTransformer(self.voice.source)
         self.voice.is_playing()
+
+    @commands.command()
+    async def save(self, ctx: commands.Context, url: str):
+        # 一時音源ファイルのダウンロード
+        ydl = ytl.YoutubeDL({"format": "bestaudio/best", "outtmpl": "temp.mp3"})
+        info_log = ydl.extract_info(url, download=True)
+
+        # セーブできない文字列を置換
+        title = info_log["title"]
+        title = title.replace("\\", "￥")
+        title = title.replace("/", "／")
+        title = title.replace(":", "：")
+        title = title.replace("*", "＊")
+        title = title.replace("?", "？")
+        title = title.replace('"', "”")
+        title = title.replace("<", "＜")
+        title = title.replace(">", "＞")
+        title = title.replace("|", "｜")
+
+        # リネーム
+        filename = title + ".mp3"
+        if os.path.isfile(filename):
+            os.remove(filename)
+        os.rename("temp.mp3", filename)
+
+        # ファイル送信
+        await ctx.send(file=discord.File(filename))
 
     @commands.command()
     async def stop(self, ctx: commands.Context):
