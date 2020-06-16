@@ -68,7 +68,10 @@ class MusicCog(commands.Cog):
         os.rename("temp.mp3", filename)
 
         # ファイル送信
-        await ctx.send(file=discord.File(filename))
+        try:
+            await ctx.send(file=discord.File(filename))
+        except discord.errors.HTTPException as e:
+            await ctx.send("ERROR : " + e.text)
 
     @commands.command()
     async def stop(self, ctx: commands.Context):
